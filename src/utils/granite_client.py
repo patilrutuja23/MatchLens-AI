@@ -1,0 +1,365 @@
+"""
+Hugging Face Granite API Client
+Handles communication with Hugging Face Inference API and IBM Granite models
+"""
+
+import os
+from typing import Dict, List, Optional
+from huggingface_hub import InferenceClient
+from src.utils.config import load_config
+
+class GraniteClient:
+    """Client for IBM Granite LLM via Hugging Face Inference API with intelligent fallback"""
+    
+    def __init__(self):
+        """Initialize Granite client with Hugging Face credentials"""
+        self.config = load_config()
+        self.model_id = self.config.granite_model_id
+        self.token = self.config.huggingface_token
+        self.demo_mode = False
+        self.current_model = None
+        self.inference_method = None
+        
+        # Validate configuration
+        is_valid, error_msg = self.config.validate_huggingface_config()
+        
+        # Debug logging
+        print(f"\n{'='*60}")
+        print(f"🔧 Initializing IBM Granite Client via Hugging Face")
+        print(f"{'='*60}")
+        print(f"   Primary Model: {self.model_id}")
+        print(f"   Token Present: {bool(self.token)}")
+        if self.token:
+            print(f"   Token Prefix: {self.token[:10]}...")
+        
+        model_info = self.config.get_granite_model_info()
+        print(f"   Model Type: {model_info['model_type']}")
+        print(f"   Is IBM Granite: {model_info['is_ibm']}")
+        
+        if not is_valid:
+            print(f"\n❌ Configuration Error: {error_msg}")
+            print(f"⚠️  Falling back to DEMO MODE - responses will be simulated")
+            print(f"{'='*60}\n")
+            self.demo_mode = True
+            self.client = None
+        else:
+            try:
+                # Initialize Hugging Face InferenceClient
+                self.client = InferenceClient(token=self.token)
+                print(f"✅ InferenceClient initialized successfully")
+                
+                # Try to initialize with primary model
+                success = self._test_model_connection(self.model_id)
+                
+                if not success:
+                    print(f"\n⚠️  Primary model not available, trying fallback models...")
+                    # Try fallback models
+                    for fallback_model in self.config.granite_fallback_models:
+                        if fallback_model != self.model_id:
+                            print(f"   Trying: {fallback_model}")
+                            if self._test_model_connection(fallback_model):
+                                self.model_id = fallback_model
+                                self.current_model = fallback_model
+                                print(f"✅ Successfully connected to: {fallback_model}")
+                                break
+                    else:
+                        print(f"\n❌ No Granite models available via Inference API")
+                        print(f"⚠️  Falling back to DEMO MODE")
+                        self.demo_mode = True
+                else:
+                    self.current_model = self.model_id
+                
+                print(f"{'='*60}\n")
+                
+            except Exception as e:
+                print(f"\n❌ Failed to initialize InferenceClient: {str(e)}")
+                print(f"⚠️  Falling back to DEMO MODE")
+                print(f"{'='*60}\n")
+                self.demo_mode = True
+                self.client = None
+        
+        # Default generation parameters optimized for Granite models
+        self.default_params = {
+            "max_new_tokens": 500,
+            "temperature": 0.7,
+            "top_k": 50,
+            "top_p": 0.95,
+            "repetition_penalty": 1.1,
+            "do_sample": True
+        }
+    
+    def _test_model_connection(self, model_id: str) -> bool:
+        """
+        Test if a model is available via Inference API
+        
+        Args:
+            model_id: Model identifier to test
+            
+        Returns:
+            True if model is available, False otherwise
+        """
+        # Check if client is initialized
+        if self.client is None:
+            print(f"   ✗ Client not initialized")
+            return False
+            
+        try:
+            # Try text_generation first (most common for instruct models)
+            test_prompt = "Hello"
+            response = self.client.text_generation(
+                test_prompt,
+                model=model_id,
+                max_new_tokens=10
+            )
+            self.inference_method = "text_generation"
+            print(f"   ✓ Model supports text_generation API")
+            return True
+        except Exception as e:
+            error_str = str(e).lower()
+            
+            # Check for specific error types
+            if "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
+                print(f"   ✗ Model not found on Inference API")
+                return False
+            elif "not supported" in error_str or "not available" in error_str:
+                # Try chat_completion as fallback
+                try:
+                    response = self.client.chat_completion(
+                        messages=[{"role": "user", "content": "Hello"}],
+                        model=model_id,
+                        max_tokens=10
+                    )
+                    self.inference_method = "chat_completion"
+                    print(f"   ✓ Model supports chat_completion API")
+                    return True
+                except Exception as e2:
+                    print(f"   ✗ Model not available: {str(e2)[:100]}")
+                    return False
+            else:
+                print(f"   ✗ Connection test failed: {str(e)[:100]}")
+                return False
+    
+    def _generate_demo_response(self, prompt: str) -> str:
+        """
+        Generate a demo response when API is unavailable
+        
+        Args:
+            prompt: Input prompt
+            
+        Returns:
+            Simulated football analysis response
+        """
+        # Extract context from prompt
+        prompt_lower = prompt.lower()
+        
+        if "var" in prompt_lower or "video assistant referee" in prompt_lower:
+            return """This VAR decision was reviewed carefully by the video assistant referee team. 
+The officials examined multiple camera angles to ensure accuracy. Based on the available evidence 
+and the Laws of the Game, the decision was made to maintain fairness and sporting integrity. 
+VAR technology helps referees make more accurate decisions in critical match situations by providing 
+additional perspectives that may not be visible to the on-field referee in real-time."""
+        
+        elif "momentum" in prompt_lower or "shift" in prompt_lower:
+            return """The momentum shift in this period was influenced by several key tactical and psychological factors. 
+The team's strategic adjustments, including increased pressing intensity and improved ball possession, 
+created more attacking opportunities and territorial advantage. This change in momentum often occurs when 
+teams make strategic substitutions or adapt their formation to exploit opponent weaknesses. The psychological 
+impact of key events, such as goals or near-misses, also plays a crucial role in momentum changes, 
+affecting player confidence and decision-making on the pitch."""
+        
+        elif "story" in prompt_lower or "match" in prompt_lower or "narrative" in prompt_lower:
+            return """This was an exciting match that showcased the beautiful game at its finest. 
+Both teams displayed tactical discipline and technical skill throughout the contest, creating 
+an engaging spectacle for fans. The match featured several key moments that shifted the balance 
+of play, with both sides creating scoring opportunities through well-executed attacking moves. 
+The final result reflected the competitive nature of the game, with both teams giving their all 
+for the full 90 minutes. Individual brilliance combined with team coordination made this a 
+memorable encounter that highlighted the strategic depth of modern football."""
+        
+        elif "player" in prompt_lower or "performance" in prompt_lower:
+            return """The player delivered a solid performance, contributing significantly to the team's efforts 
+throughout the match. Their positioning, decision-making, and technical execution were key factors 
+in the team's tactical approach. They showed good awareness both in attack and defense, making 
+important contributions at crucial moments. Their work rate and ability to read the game demonstrated 
+the qualities that separate good players from great ones. This type of consistent performance, 
+combining technical skill with tactical intelligence, is essential for success at the highest level."""
+        
+        else:
+            return """Based on the match context and tactical analysis, this situation demonstrates 
+the complexity and strategic depth of modern football. Multiple factors including team formation, 
+player positioning, game state, and tactical adjustments all contribute to the outcome. Understanding 
+these elements helps fans appreciate the strategic depth of the sport and the split-second decisions 
+made by players and coaches. The interplay between individual skill and team tactics creates the 
+dynamic and unpredictable nature that makes football the world's most popular sport."""
+    
+    def generate(
+        self, 
+        prompt: str, 
+        max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None
+    ) -> str:
+        """
+        Generate text using IBM Granite model via Hugging Face or demo mode
+        
+        Args:
+            prompt: Input prompt for generation
+            max_tokens: Maximum tokens to generate
+            temperature: Sampling temperature
+            
+        Returns:
+            Generated text response
+        """
+        # Use demo mode if client is not available
+        if self.demo_mode or self.client is None:
+            print(f"🎭 Using DEMO MODE for generation")
+            return self._generate_demo_response(prompt)
+        
+        try:
+            # Update parameters if provided
+            params = self.default_params.copy()
+            if max_tokens:
+                params["max_new_tokens"] = max_tokens
+            if temperature:
+                params["temperature"] = temperature
+            
+            print(f"🚀 Generating with IBM Granite model: {self.current_model}")
+            print(f"   Method: {self.inference_method}")
+            print(f"   Prompt length: {len(prompt)} chars")
+            
+            # Generate based on determined inference method
+            if self.inference_method == "chat_completion":
+                # Use chat completion API
+                messages = [
+                    {"role": "user", "content": prompt}
+                ]
+                response = self.client.chat_completion(
+                    messages=messages,
+                    model=self.current_model,
+                    max_tokens=params.get("max_new_tokens", 500),
+                    temperature=params.get("temperature", 0.7)
+                )
+                # Extract text from chat completion response
+                if hasattr(response, 'choices') and len(response.choices) > 0:
+                    result = response.choices[0].message.content or ""
+                else:
+                    result = str(response)
+                
+            else:
+                # Use text generation API (default)
+                response = self.client.text_generation(
+                    prompt,
+                    model=self.current_model,
+                    **params
+                )
+                result = str(response) if response is not None else ""
+            
+            # Ensure result is a string before using len()
+            if result is None:
+                result = ""
+            
+            print(f"✅ Generation successful ({len(result)} chars)")
+            return result
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"\n❌ Generation failed with IBM Granite model")
+            print(f"   Error: {error_msg}")
+            
+            # Provide helpful error messages
+            if "model" in error_msg.lower() and "not found" in error_msg.lower():
+                print(f"   ⚠️  Model '{self.current_model}' not found")
+                print(f"   💡 The model may have been moved or renamed")
+            elif "unauthorized" in error_msg.lower() or "token" in error_msg.lower():
+                print(f"   ⚠️  Authentication failed")
+                print(f"   💡 Check your HUGGINGFACE_TOKEN in .env")
+            elif "rate limit" in error_msg.lower():
+                print(f"   ⚠️  Rate limit exceeded")
+                print(f"   💡 Please wait before trying again")
+            elif "timeout" in error_msg.lower():
+                print(f"   ⚠️  Request timeout")
+                print(f"   💡 The model may be loading, try again")
+            else:
+                print(f"   💡 Full error: {error_msg[:200]}")
+            
+            # Fall back to demo mode for this request
+            print(f"   🎭 Using DEMO MODE for this request\n")
+            return self._generate_demo_response(prompt)
+    
+    def generate_with_context(
+        self,
+        system_prompt: str,
+        user_message: str,
+        context: Optional[str] = None
+    ) -> str:
+        """
+        Generate response with system prompt and context
+        
+        Args:
+            system_prompt: System instructions
+            user_message: User query
+            context: Additional context information
+            
+        Returns:
+            Generated response
+        """
+        # Build prompt with context (optimized for Granite instruct models)
+        prompt_parts = [f"System: {system_prompt}"]
+        
+        if context:
+            prompt_parts.append(f"\nContext: {context}")
+        
+        prompt_parts.append(f"\nUser: {user_message}")
+        prompt_parts.append("\nAssistant:")
+        
+        full_prompt = "\n".join(prompt_parts)
+        
+        return self.generate(full_prompt)
+    
+    def explain_decision(
+        self,
+        decision_type: str,
+        match_context: Dict,
+        specific_event: Dict
+    ) -> str:
+        """
+        Generate explanation for a specific match decision
+        
+        Args:
+            decision_type: Type of decision (e.g., "VAR", "Momentum Shift")
+            match_context: Overall match context
+            specific_event: Specific event details
+            
+        Returns:
+            Detailed explanation
+        """
+        system_prompt = f"""You are an expert football analyst providing clear, 
+        detailed explanations of {decision_type} decisions. Use the match context 
+        and event details to provide an educational explanation that helps fans 
+        understand the decision."""
+        
+        context = f"""Match: {match_context.get('teams', 'Unknown')}
+        Score: {match_context.get('score', 'Unknown')}
+        Time: {match_context.get('time', 'Unknown')}
+        Event: {specific_event.get('description', 'Unknown')}"""
+        
+        user_message = f"Explain this {decision_type} decision in detail."
+        
+        return self.generate_with_context(system_prompt, user_message, context)
+    
+    def get_model_info(self) -> Dict:
+        """
+        Get information about the current model configuration
+        
+        Returns:
+            Dictionary with model information
+        """
+        return {
+            "configured_model": self.model_id,
+            "active_model": self.current_model,
+            "inference_method": self.inference_method,
+            "demo_mode": self.demo_mode,
+            "is_granite": "granite" in (self.current_model or "").lower(),
+            "provider": "Hugging Face Inference API" if not self.demo_mode else "Demo Mode"
+        }
+
+# Made with Bob

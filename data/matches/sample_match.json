@@ -1,0 +1,175 @@
+{
+  "match_id": "sample_001",
+  "home_team": "Manchester United",
+  "away_team": "Liverpool",
+  "competition": "Premier League",
+  "season": "2025-26",
+  "date": "2026-06-08",
+  "venue": "Old Trafford",
+  "attendance": 74879,
+  "referee": "Michael Oliver",
+  "final_score": "3-2",
+  "halftime_score": "1-1",
+  "duration": 90,
+  "man_of_match": "Bruno Fernandes",
+  "key_stats": {
+    "possession": {
+      "home": 52,
+      "away": 48
+    },
+    "shots": {
+      "home": 18,
+      "away": 14
+    },
+    "shots_on_target": {
+      "home": 8,
+      "away": 6
+    },
+    "corners": {
+      "home": 7,
+      "away": 5
+    },
+    "fouls": {
+      "home": 11,
+      "away": 13
+    },
+    "yellow_cards": {
+      "home": 2,
+      "away": 3
+    },
+    "red_cards": {
+      "home": 0,
+      "away": 0
+    }
+  },
+  "events": [
+    {
+      "time": 12,
+      "type": "goal",
+      "team": "home",
+      "player": "Marcus Rashford",
+      "description": "Clinical finish after quick counter-attack",
+      "dangerous": true
+    },
+    {
+      "time": 23,
+      "type": "shot",
+      "team": "away",
+      "player": "Mohamed Salah",
+      "description": "Shot saved by goalkeeper",
+      "dangerous": true
+    },
+    {
+      "time": 28,
+      "type": "goal",
+      "team": "away",
+      "player": "Mohamed Salah",
+      "description": "Curling shot from edge of the box",
+      "dangerous": true
+    },
+    {
+      "time": 34,
+      "type": "yellow_card",
+      "team": "away",
+      "player": "Fabinho",
+      "description": "Tactical foul"
+    },
+    {
+      "time": 45,
+      "type": "corner",
+      "team": "home",
+      "description": "Corner kick"
+    },
+    {
+      "time": 56,
+      "type": "goal",
+      "team": "away",
+      "player": "Darwin Nunez",
+      "description": "Header from corner kick",
+      "dangerous": true
+    },
+    {
+      "time": 67,
+      "type": "substitution",
+      "team": "home",
+      "player_out": "Antony",
+      "player_in": "Alejandro Garnacho",
+      "description": "Fresh legs for final push"
+    },
+    {
+      "time": 71,
+      "type": "var",
+      "decision_type": "penalty",
+      "team": "home",
+      "description": "Handball in penalty area",
+      "initial_decision": "No penalty",
+      "var_review": "Checked for handball",
+      "final_decision": "Penalty awarded",
+      "review_duration": 45
+    },
+    {
+      "time": 73,
+      "type": "goal",
+      "team": "home",
+      "player": "Bruno Fernandes",
+      "description": "Penalty conversion",
+      "dangerous": true
+    },
+    {
+      "time": 85,
+      "type": "yellow_card",
+      "team": "home",
+      "player": "Casemiro",
+      "description": "Time wasting"
+    },
+    {
+      "time": 89,
+      "type": "goal",
+      "team": "home",
+      "player": "Alejandro Garnacho",
+      "description": "Late winner from substitute",
+      "dangerous": true
+    }
+  ],
+  "top_performers": [
+    {
+      "name": "Bruno Fernandes",
+      "team": "Manchester United",
+      "position": "Midfielder",
+      "rating": 9.2,
+      "stats": {
+        "goals": 1,
+        "assists": 2,
+        "key_passes": 5,
+        "passes_completed": 45,
+        "tackles": 3
+      }
+    },
+    {
+      "name": "Mohamed Salah",
+      "team": "Liverpool",
+      "position": "Forward",
+      "rating": 8.5,
+      "stats": {
+        "goals": 1,
+        "assists": 0,
+        "shots": 4,
+        "dribbles": 6,
+        "key_passes": 3
+      }
+    },
+    {
+      "name": "Marcus Rashford",
+      "team": "Manchester United",
+      "position": "Forward",
+      "rating": 8.3,
+      "stats": {
+        "goals": 1,
+        "assists": 1,
+        "shots": 5,
+        "key_passes": 3,
+        "dribbles": 4
+      }
+    }
+  ]
+}
