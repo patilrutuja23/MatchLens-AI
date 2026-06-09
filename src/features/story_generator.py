@@ -108,9 +108,8 @@ class StoryGenerator:
                         "impact": self._calculate_moment_impact(event, match_data)
                     }
                     key_moments.append(moment)
-            except Exception as e:
+            except Exception:
                 # Skip problematic events but continue processing
-                print(f"Warning: Skipping event due to error: {e}")
                 continue
         
         # Sort by time (now guaranteed to be int)
