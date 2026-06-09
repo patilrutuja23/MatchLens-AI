@@ -67,6 +67,17 @@ class StoryGenerator:
             "match_narrative": match_narrative
         }
     
+    def _parse_time(self, time_value) -> int:
+        """Parse time value to integer, handling various formats"""
+        try:
+            if isinstance(time_value, str):
+                # Extract base minute from formats like "45+3" or "90+2"
+                return int(time_value.split('+')[0])
+            else:
+                return int(time_value)
+        except (ValueError, AttributeError, TypeError):
+            return 0
+    
     def _extract_key_moments(self, match_data: Dict) -> List[Dict]:
         """Extract and enrich key moments from match data"""
         key_moments = []
@@ -77,8 +88,10 @@ class StoryGenerator:
             event_type = event.get("type", "").lower()
             
             if any(priority in event_type for priority in priority_events):
+                time_value = event.get("time", 0)
                 moment = {
-                    "time": event.get("time", 0),
+                    "time": self._parse_time(time_value),
+                    "time_display": str(time_value),  # Keep original for display
                     "type": event.get("type", ""),
                     "description": event.get("description", ""),
                     "team": event.get("team", ""),
@@ -87,7 +100,7 @@ class StoryGenerator:
                 }
                 key_moments.append(moment)
         
-        # Sort by time
+        # Sort by time (now guaranteed to be int)
         key_moments.sort(key=lambda x: x["time"])
         
         return key_moments
@@ -97,7 +110,7 @@ class StoryGenerator:
         impact = 50  # Base impact
         
         event_type = event.get("type", "").lower()
-        time = event.get("time", 0)
+        time = self._parse_time(event.get("time", 0))
         
         # Event type impact
         if "goal" in event_type:
@@ -170,7 +183,7 @@ class StoryGenerator:
             swing = 30
         
         # Adjust for timing
-        time = event.get("time", 0)
+        time = self._parse_time(event.get("time", 0))
         if time > 80:
             swing = int(swing * 1.3)
         
@@ -179,7 +192,7 @@ class StoryGenerator:
     def _generate_turning_point_reason(self, event: Dict, match_data: Dict) -> str:
         """Generate explanation for why this was the turning point"""
         event_type = event.get("type", "").lower()
-        time = event.get("time", 0)
+        time = self._parse_time(event.get("time", 0))
         
         reasons = []
         
