@@ -93,23 +93,28 @@ class StoryGenerator:
         priority_events = ["goal", "red_card", "penalty", "var_decision", "injury", "substitution"]
         
         for event in match_data.get("events", []):
-            event_type = event.get("type", "").lower()
-            
-            if any(priority in event_type for priority in priority_events):
-                time_value = event.get("time", 0)
-                moment = {
-                    "time": self._parse_time(time_value),
-                    "time_display": str(time_value),  # Keep original for display
-                    "type": event.get("type", ""),
-                    "description": event.get("description", ""),
-                    "team": event.get("team", ""),
-                    "player": event.get("player", ""),
-                    "impact": self._calculate_moment_impact(event, match_data)
-                }
-                key_moments.append(moment)
+            try:
+                event_type = event.get("type", "").lower()
+                
+                if any(priority in event_type for priority in priority_events):
+                    time_value = event.get("time", 0)
+                    moment = {
+                        "time": self._parse_time(time_value),
+                        "time_display": str(time_value),  # Keep original for display
+                        "type": event.get("type", ""),
+                        "description": event.get("description", ""),
+                        "team": event.get("team", ""),
+                        "player": event.get("player", ""),
+                        "impact": self._calculate_moment_impact(event, match_data)
+                    }
+                    key_moments.append(moment)
+            except Exception as e:
+                # Skip problematic events but continue processing
+                print(f"Warning: Skipping event due to error: {e}")
+                continue
         
         # Sort by time (now guaranteed to be int)
-        key_moments.sort(key=lambda x: x["time"])
+        key_moments.sort(key=lambda x: x.get("time", 0))
         
         return key_moments
     
