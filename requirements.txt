@@ -17,3 +17,11 @@ pydantic==2.6.0
 pydantic-settings==2.1.0
 
 huggingface-hub>=0.23.0
+
+# Document Processing with Docling
+docling>=1.0.0
+PyPDF2>=3.0.0
+
+# Additional dependencies for RAG
+torch>=2.0.0
+transformers>=4.30.0

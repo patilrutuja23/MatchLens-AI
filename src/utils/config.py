@@ -31,6 +31,14 @@ class Settings(BaseSettings):
         "ibm-granite/granite-3.3-8b-instruct"
     ]
     
+    # Supported model families for development/testing
+    supported_model_families: list = [
+        "granite",  # IBM Granite (preferred)
+        "qwen",     # Qwen models
+        "mistral",  # Mistral models
+        "phi"       # Microsoft Phi models
+    ]
+    
     # Application Settings
     app_title: str = os.getenv("APP_TITLE", "MatchLens AI")
     app_icon: str = os.getenv("APP_ICON", "⚽")
@@ -63,32 +71,55 @@ class Settings(BaseSettings):
         if not self.granite_model_id:
             return False, "GRANITE_MODEL_ID is not set in .env file."
         
-        # Check if it's a Granite model
-        if "granite" not in self.granite_model_id.lower():
-            return False, f"Model '{self.granite_model_id}' does not appear to be a Granite model. Please use an IBM Granite model."
+        # Check if model is from a supported family
+        model_lower = self.granite_model_id.lower()
+        is_supported = any(family in model_lower for family in self.supported_model_families)
+        
+        if not is_supported:
+            supported_list = ", ".join(self.supported_model_families)
+            return False, f"Model '{self.granite_model_id}' is not from a supported family. Supported: {supported_list}"
+        
+        # Warn if not using Granite (preferred model)
+        if "granite" not in model_lower:
+            print(f"\n⚠️  WARNING: Using non-Granite model '{self.granite_model_id}'")
+            print(f"   Granite models are preferred for production use.")
+            print(f"   Current model is acceptable for development/testing.\n")
         
         return True, ""
     
     def get_granite_model_info(self) -> dict:
         """
-        Get information about the configured Granite model
+        Get information about the configured model
         
         Returns:
             Dictionary with model information
         """
+        model_lower = self.granite_model_id.lower()
+        
+        # Determine model family
+        model_family = "unknown"
+        for family in self.supported_model_families:
+            if family in model_lower:
+                model_family = family
+                break
+        
         model_info = {
             "model_id": self.granite_model_id,
-            "is_granite": "granite" in self.granite_model_id.lower(),
-            "is_ibm": "ibm" in self.granite_model_id.lower(),
+            "model_family": model_family,
+            "is_granite": "granite" in model_lower,
+            "is_ibm": "ibm" in model_lower,
+            "is_qwen": "qwen" in model_lower,
+            "is_mistral": "mistral" in model_lower,
+            "is_phi": "phi" in model_lower,
             "model_type": "unknown"
         }
         
         # Determine model type
-        if "code" in self.granite_model_id.lower():
+        if "code" in model_lower:
             model_info["model_type"] = "code"
-        elif "instruct" in self.granite_model_id.lower():
+        elif "instruct" in model_lower:
             model_info["model_type"] = "instruct"
-        elif "chat" in self.granite_model_id.lower():
+        elif "chat" in model_lower:
             model_info["model_type"] = "chat"
         
         return model_info
@@ -106,7 +137,12 @@ def load_config() -> Settings:
             model_info = config.get_granite_model_info()
             print(f"✅ Configuration valid")
             print(f"   Model: {model_info['model_id']}")
+            print(f"   Family: {model_info['model_family']}")
             print(f"   Type: {model_info['model_type']}")
+            
+            # Show preference notice
+            if not model_info['is_granite']:
+                print(f"   Note: Granite models are preferred for production")
     
     return config
 

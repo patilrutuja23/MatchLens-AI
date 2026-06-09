@@ -1,23 +1,46 @@
 """
-VAR Decision Explainer
-Explains Video Assistant Referee decisions using AI
+VAR Decision Explainer with RAG
+Explains Video Assistant Referee decisions using AI with FIFA rules retrieval
 """
 
 from typing import Dict, List, Optional
 from src.utils.granite_client import GraniteClient
 from src.utils.vector_db import VectorDatabase
+from src.utils.rag_chain import RAGChain
 
 class VARExplainer:
-    """Explains VAR decisions using AI and rule context"""
+    """Explains VAR decisions using AI with RAG-enhanced context"""
     
-    def __init__(self):
-        """Initialize VAR explainer"""
+    def __init__(self, use_rag: bool = True):
+        """
+        Initialize VAR explainer
+        
+        Args:
+            use_rag: Whether to use RAG for enhanced explanations
+        """
         self.granite_client = GraniteClient()
         self.vector_db = VectorDatabase()
+        self.use_rag = use_rag
+        
+        # Initialize RAG chain if enabled
+        if self.use_rag:
+            try:
+                self.rag_chain = RAGChain()
+                print("✅ VAR Explainer initialized with RAG")
+            except Exception as e:
+                print(f"⚠️  RAG initialization failed: {e}")
+                print("⚠️  Falling back to basic mode")
+                self.use_rag = False
+                self.rag_chain = None
+        else:
+            self.rag_chain = None
+            print("✅ VAR Explainer initialized (basic mode)")
+        
+        # Load basic VAR rules as fallback
         self._load_var_rules()
     
     def _load_var_rules(self):
-        """Load VAR rules into vector database"""
+        """Load basic VAR rules into vector database (fallback)"""
         var_rules = [
             "VAR can review goals and offenses leading up to a goal",
             "VAR can review penalty decisions and offenses in the penalty area",
@@ -44,7 +67,7 @@ class VARExplainer:
         incident_details: Dict
     ) -> Dict:
         """
-        Explain a VAR decision
+        Explain a VAR decision with RAG-enhanced context
         
         Args:
             decision_type: Type of VAR decision (goal, penalty, red_card, offside)
@@ -52,9 +75,62 @@ class VARExplainer:
             incident_details: Details of the specific incident
             
         Returns:
-            Comprehensive explanation with relevant rules
+            Comprehensive explanation with relevant rules, evidence, and confidence
         """
-        # Search for relevant VAR rules
+        if self.use_rag and self.rag_chain:
+            return self._explain_with_rag(decision_type, match_context, incident_details)
+        else:
+            return self._explain_basic(decision_type, match_context, incident_details)
+    
+    def _explain_with_rag(
+        self,
+        decision_type: str,
+        match_context: Dict,
+        incident_details: Dict
+    ) -> Dict:
+        """Explain VAR decision using RAG with FIFA rules retrieval"""
+        
+        # Build detailed description for retrieval
+        description = incident_details.get('description', '')
+        time = incident_details.get('time', 'Unknown')
+        
+        decision_description = f"{decision_type} decision at {time}: {description}"
+        
+        # Use RAG chain to get explanation with retrieved FIFA rules
+        rag_result = self.rag_chain.explain_var_decision(
+            decision_description=decision_description,
+            match_context=match_context,
+            top_k=3
+        )
+        
+        # Analyze decision factors
+        factors = self._analyze_decision_factors(decision_type, incident_details)
+        
+        # Build comprehensive result
+        result = {
+            "explanation": rag_result["explanation"],
+            "decision_type": decision_type,
+            "rules_used": rag_result["rules_used"],
+            "retrieved_evidence": rag_result["retrieved_evidence"],
+            "confidence_score": rag_result["confidence"],
+            "decision_factors": factors,
+            "final_decision": incident_details.get("final_decision", "Unknown"),
+            "review_duration": incident_details.get("review_duration", "Unknown"),
+            "sources": rag_result["sources"],
+            "rag_enabled": True
+        }
+        
+        return result
+    
+    def _explain_basic(
+        self,
+        decision_type: str,
+        match_context: Dict,
+        incident_details: Dict
+    ) -> Dict:
+        """Explain VAR decision using basic mode (fallback)"""
+        
+        # Search for relevant VAR rules from basic database
         query = f"{decision_type} {incident_details.get('description', '')}"
         relevant_rules = self.vector_db.search(query, k=3)
         
@@ -75,7 +151,9 @@ class VARExplainer:
             "relevant_rules": [rule[0] for rule in relevant_rules],
             "decision_factors": factors,
             "final_decision": incident_details.get("final_decision", "Unknown"),
-            "review_duration": incident_details.get("review_duration", "Unknown")
+            "review_duration": incident_details.get("review_duration", "Unknown"),
+            "confidence_score": 0.7,  # Default confidence
+            "rag_enabled": False
         }
     
     def _generate_var_explanation(
@@ -85,11 +163,11 @@ class VARExplainer:
         incident_details: Dict,
         relevant_rules: List
     ) -> str:
-        """Generate AI explanation for VAR decision"""
+        """Generate AI explanation for VAR decision (basic mode)"""
         system_prompt = f"""You are an expert football referee and analyst. 
-        Explain this VAR {decision_type} decision clearly and educationally. 
-        Reference the relevant rules and explain why the decision was made. 
-        Help fans understand the reasoning behind the decision."""
+Explain this VAR {decision_type} decision clearly and educationally. 
+Reference the relevant rules and explain why the decision was made. 
+Help fans understand the reasoning behind the decision."""
         
         # Build context
         context_parts = [

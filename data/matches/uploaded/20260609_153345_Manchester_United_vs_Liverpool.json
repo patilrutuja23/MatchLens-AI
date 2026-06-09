@@ -1,30 +1,12 @@
 {
   "home_team": "Manchester United",
   "away_team": "Liverpool",
-  "score": "2-2",
-  "date": "2024-03-15",
-  "competition": "Premier League",
-  "venue": "Old Trafford",
-  "attendance": 74879,
-  "referee": "Michael Oliver",
-  "possession": {
-    "home": 48,
-    "away": 52
-  },
-  "shots": {
-    "home": 14,
-    "away": 16
-  },
-  "shots_on_target": {
-    "home": 6,
-    "away": 7
-  },
   "events": [
     {
       "type": "kickoff",
       "time": "0",
       "team": "Manchester United",
-      "description": "Match kicks off"
+      "final_decision": "Match kicks off"
     },
     {
       "type": "goal",
@@ -32,8 +14,7 @@
       "team": "Manchester United",
       "player": "Marcus Rashford",
       "assist": "Bruno Fernandes",
-      "description": "Rashford finishes a brilliant through ball from Fernandes",
-      "score": "1-0"
+      "final_decision": "Rashford finishes a brilliant through ball from Fernandes, 1-0"
     },
     {
       "type": "yellow_card",
@@ -46,7 +27,7 @@
       "type": "corner",
       "time": "23",
       "team": "Liverpool",
-      "description": "Corner kick for Liverpool"
+      "final_decision": "Corner kick for Liverpool"
     },
     {
       "type": "goal",
@@ -54,16 +35,15 @@
       "team": "Liverpool",
       "player": "Mohamed Salah",
       "assist": "Trent Alexander-Arnold",
-      "description": "Salah equalizes with a powerful header from Alexander-Arnold's cross",
-      "score": "1-1"
+      "final_decision": "Salah equalizes with a powerful header, 1-1"
     },
     {
       "type": "substitution",
       "time": "35",
       "team": "Manchester United",
+      "reason": "Injury",
       "player_out": "Luke Shaw",
-      "player_in": "Tyrell Malacia",
-      "reason": "Injury"
+      "player_in": "Tyrell Malacia"
     },
     {
       "type": "yellow_card",
@@ -76,8 +56,7 @@
       "type": "penalty",
       "time": "42",
       "team": "Liverpool",
-      "description": "Penalty awarded to Liverpool for handball",
-      "awarded": true
+      "final_decision": "Penalty awarded to Liverpool for handball"
     },
     {
       "type": "var_review",
@@ -86,43 +65,40 @@
       "decision_type": "penalty",
       "initial_decision": "No penalty",
       "final_decision": "Penalty awarded",
-      "description": "VAR reviews potential handball by Lisandro Martinez",
-      "review_duration": "2:15"
+      "description": "VAR reviews potential handball by Lisandro Martinez"
     },
     {
       "type": "goal",
       "time": "44",
       "team": "Liverpool",
       "player": "Mohamed Salah",
-      "description": "Salah converts the penalty to give Liverpool the lead",
-      "score": "1-2",
-      "penalty": true
+      "final_decision": "Salah converts the penalty to give Liverpool the lead (1-2)"
     },
     {
       "type": "halftime",
       "time": "45+3",
-      "description": "Half-time whistle",
-      "score": "1-2"
+      "team": "",
+      "final_decision": "Half-time whistle (1-2)"
     },
     {
       "type": "kickoff",
       "time": "45",
       "team": "Liverpool",
-      "description": "Second half begins"
+      "final_decision": "Second half begins"
     },
     {
       "type": "substitution",
       "time": "56",
       "team": "Manchester United",
+      "reason": "Tactical",
       "player_out": "Antony",
-      "player_in": "Alejandro Garnacho",
-      "reason": "Tactical"
+      "player_in": "Alejandro Garnacho"
     },
     {
       "type": "corner",
       "time": "61",
       "team": "Manchester United",
-      "description": "Corner kick for Manchester United"
+      "final_decision": "Corner kick for Manchester United"
     },
     {
       "type": "goal",
@@ -130,8 +106,7 @@
       "team": "Manchester United",
       "player": "Harry Maguire",
       "assist": "Bruno Fernandes",
-      "description": "Maguire heads in from Fernandes' corner to equalize",
-      "score": "2-2"
+      "final_decision": "Maguire heads in from Fernandes' corner to equalize, 2-2"
     },
     {
       "type": "yellow_card",
@@ -144,9 +119,9 @@
       "type": "substitution",
       "time": "72",
       "team": "Liverpool",
+      "reason": "Tactical",
       "player_out": "Darwin Nunez",
-      "player_in": "Diogo Jota",
-      "reason": "Tactical"
+      "player_in": "Diogo Jota"
     },
     {
       "type": "var_review",
@@ -155,8 +130,7 @@
       "decision_type": "offside",
       "initial_decision": "Goal",
       "final_decision": "No goal - offside",
-      "description": "VAR checks potential offside in buildup to Garnacho's goal",
-      "review_duration": "1:45"
+      "description": "VAR checks potential offside in buildup to Garnacho's goal"
     },
     {
       "type": "yellow_card",
@@ -169,15 +143,15 @@
       "type": "substitution",
       "time": "82",
       "team": "Liverpool",
+      "reason": "Tactical",
       "player_out": "Luis Diaz",
-      "player_in": "Cody Gakpo",
-      "reason": "Tactical"
+      "player_in": "Cody Gakpo"
     },
     {
       "type": "corner",
       "time": "85",
       "team": "Liverpool",
-      "description": "Corner kick for Liverpool"
+      "final_decision": "Corner kick for Liverpool"
     },
     {
       "type": "yellow_card",
@@ -190,45 +164,25 @@
       "type": "substitution",
       "time": "89",
       "team": "Manchester United",
+      "reason": "Tactical",
       "player_out": "Marcus Rashford",
-      "player_in": "Scott McTominay",
-      "reason": "Tactical"
+      "player_in": "Scott McTominay"
     },
     {
       "type": "red_card",
       "time": "90+2",
       "team": "Manchester United",
       "player": "Casemiro",
-      "reason": "Second yellow card - dangerous tackle",
-      "second_yellow": true
+      "reason": "Second yellow card - dangerous tackle"
     },
     {
       "type": "fulltime",
       "time": "90+6",
-      "description": "Full-time whistle",
-      "final_score": "2-2"
+      "team": "",
+      "final_decision": "Full-time whistle (2-2)"
     }
   ],
-  "statistics": {
-    "passes": {
-      "home": 412,
-      "away": 445
-    },
-    "pass_accuracy": {
-      "home": 84,
-      "away": 87
-    },
-    "tackles": {
-      "home": 18,
-      "away": 16
-    },
-    "fouls": {
-      "home": 12,
-      "away": 14
-    },
-    "offsides": {
-      "home": 3,
-      "away": 2
-    }
-  }
+  "score": "2-2",
+  "date": "2024-03-15",
+  "competition": "Premier League"
 }

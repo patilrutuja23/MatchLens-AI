@@ -1,0 +1,26 @@
+home_team,away_team,score,date,competition,type,time,team,player,assist,reason,player_out,player_in,decision_type,initial_decision,final_decision,description
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,kickoff,0,Manchester United,,,,,,,,Match kicks off
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,goal,12,Manchester United,Marcus Rashford,Bruno Fernandes,,,,,,"Rashford finishes a brilliant through ball from Fernandes, 1-0"
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,yellow_card,18,Liverpool,Virgil van Dijk,,Tactical foul on Rashford,,,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,corner,23,Liverpool,,,,,,,,Corner kick for Liverpool
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,goal,27,Liverpool,Mohamed Salah,Trent Alexander-Arnold,,,,,,"Salah equalizes with a powerful header, 1-1"
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,substitution,35,Manchester United,,,Injury,Luke Shaw,Tyrell Malacia,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,yellow_card,38,Manchester United,Casemiro,,Foul on Luis Diaz,,,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,penalty,42,Liverpool,,,,,,,,Penalty awarded to Liverpool for handball
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,var_review,42,Liverpool,,,,,,penalty,No penalty,Penalty awarded,VAR reviews potential handball by Lisandro Martinez
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,goal,44,Liverpool,Mohamed Salah,,,,,,,Salah converts the penalty to give Liverpool the lead (1-2)
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,halftime,45+3,,,,,,,,,Half-time whistle (1-2)
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,kickoff,45,Liverpool,,,,,,,,Second half begins
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,substitution,56,Manchester United,,,Tactical,Antony,Alejandro Garnacho,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,corner,61,Manchester United,,,,,,,,Corner kick for Manchester United
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,goal,63,Manchester United,Harry Maguire,Bruno Fernandes,,,,,,"Maguire heads in from Fernandes' corner to equalize, 2-2"
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,yellow_card,68,Liverpool,Alexis Mac Allister,,Dissent,,,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,substitution,72,Liverpool,,,Tactical,Darwin Nunez,Diogo Jota,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,var_review,76,Manchester United,,,,,,offside,Goal,No goal - offside,VAR checks potential offside in buildup to Garnacho's goal
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,yellow_card,79,Manchester United,Bruno Fernandes,,Time wasting,,,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,substitution,82,Liverpool,,,Tactical,Luis Diaz,Cody Gakpo,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,corner,85,Liverpool,,,,,,,,Corner kick for Liverpool
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,yellow_card,87,Liverpool,Trent Alexander-Arnold,,Foul on Garnacho,,,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,substitution,89,Manchester United,,,Tactical,Marcus Rashford,Scott McTominay,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,red_card,90+2,Manchester United,Casemiro,,Second yellow card - dangerous tackle,,,,,
+Manchester United,Liverpool,2-2,2024-03-15,Premier League,fulltime,90+6,,,,,,,,,Full-time whistle (2-2)

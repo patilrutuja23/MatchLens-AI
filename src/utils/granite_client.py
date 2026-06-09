@@ -18,7 +18,7 @@ class GraniteClient:
         self.token = self.config.huggingface_token
         self.demo_mode = False
         self.current_model = None
-        self.inference_method = None
+        self.inference_method = "chat_completion"  # Default to chat_completion
         
         # Validate configuration
         is_valid, error_msg = self.config.validate_huggingface_config()
@@ -78,19 +78,17 @@ class GraniteClient:
                 self.demo_mode = True
                 self.client = None
         
-        # Default generation parameters optimized for Granite models
+        # Default generation parameters optimized for chat models
         self.default_params = {
-            "max_new_tokens": 500,
+            "max_tokens": 500,
             "temperature": 0.7,
-            "top_k": 50,
             "top_p": 0.95,
-            "repetition_penalty": 1.1,
-            "do_sample": True
         }
     
     def _test_model_connection(self, model_id: str) -> bool:
         """
         Test if a model is available via Inference API
+        Tries chat_completion first, then text_generation as fallback
         
         Args:
             model_id: Model identifier to test
@@ -102,41 +100,117 @@ class GraniteClient:
         if self.client is None:
             print(f"   ✗ Client not initialized")
             return False
-            
+        
+        print(f"\n   Testing model: {model_id}")
+        
+        # STEP 1: Try chat_completion FIRST (preferred for modern models, avoids StopIteration)
         try:
-            # Try text_generation first (most common for instruct models)
-            test_prompt = "Hello"
-            response = self.client.text_generation(
-                test_prompt,
+            print(f"   → Attempting chat_completion API...")
+            response = self.client.chat_completion(
+                messages=[{"role": "user", "content": "Hello"}],
                 model=model_id,
-                max_new_tokens=10
+                max_tokens=10
             )
-            self.inference_method = "text_generation"
-            print(f"   ✓ Model supports text_generation API")
-            return True
-        except Exception as e:
-            error_str = str(e).lower()
             
-            # Check for specific error types
-            if "model" in error_str and ("not found" in error_str or "does not exist" in error_str):
-                print(f"   ✗ Model not found on Inference API")
-                return False
-            elif "not supported" in error_str or "not available" in error_str:
-                # Try chat_completion as fallback
-                try:
-                    response = self.client.chat_completion(
-                        messages=[{"role": "user", "content": "Hello"}],
-                        model=model_id,
-                        max_tokens=10
-                    )
-                    self.inference_method = "chat_completion"
-                    print(f"   ✓ Model supports chat_completion API")
-                    return True
-                except Exception as e2:
-                    print(f"   ✗ Model not available: {str(e2)[:100]}")
-                    return False
+            # Log response details
+            if hasattr(response, '__dict__'):
+                print(f"   ✓ Response received: {type(response).__name__}")
+                if hasattr(response, 'choices') and response.choices:
+                    print(f"   ✓ Choices count: {len(response.choices)}")
+                    print(f"   ✓ Response content preview: {response.choices[0].message.content[:50] if response.choices[0].message.content else 'Empty'}")
+            
+            self.inference_method = "chat_completion"
+            print(f"   ✅ SUCCESS: Model supports chat_completion API")
+            return True
+            
+        except Exception as e1:
+            # Print FULL exception message (DO NOT TRUNCATE)
+            full_error_1 = str(e1)
+            print(f"   ✗ chat_completion failed")
+            print(f"   ✗ Full exception type: {type(e1).__name__}")
+            print(f"   ✗ Full error message: {full_error_1}")
+            
+            # Log HTTP status code if available
+            if hasattr(e1, 'response'):
+                if hasattr(e1.response, 'status_code'):
+                    print(f"   ✗ HTTP Status Code: {e1.response.status_code}")
+                if hasattr(e1.response, 'text'):
+                    print(f"   ✗ Response body: {e1.response.text[:200]}")
+            
+            # Explain exactly why chat_completion failed
+            error_lower_1 = full_error_1.lower()
+            if "404" in full_error_1 or "not found" in error_lower_1:
+                print(f"   ✗ REASON: Model '{model_id}' does not exist on Hugging Face")
+            elif "401" in full_error_1 or "unauthorized" in error_lower_1 or "authentication" in error_lower_1:
+                print(f"   ✗ REASON: Authentication failed - invalid or missing token")
+            elif "403" in full_error_1 or "forbidden" in error_lower_1:
+                print(f"   ✗ REASON: Access forbidden - model may be private or gated")
+            elif "503" in full_error_1 or "service unavailable" in error_lower_1:
+                print(f"   ✗ REASON: Service temporarily unavailable - model may be loading")
+            elif "429" in full_error_1 or "rate limit" in error_lower_1:
+                print(f"   ✗ REASON: Rate limit exceeded - too many requests")
+            elif "not supported" in error_lower_1 or "not available" in error_lower_1:
+                print(f"   ✗ REASON: chat_completion API not supported by this model")
+            elif "timeout" in error_lower_1:
+                print(f"   ✗ REASON: Request timeout - model may be cold starting")
             else:
-                print(f"   ✗ Connection test failed: {str(e)[:100]}")
+                print(f"   ✗ REASON: Unknown error - see full error message above")
+            
+            # STEP 2: Try text_generation as fallback
+            print(f"\n   → Attempting text_generation API as fallback...")
+            try:
+                response = self.client.text_generation(
+                    prompt="Hello",
+                    model=model_id,
+                    max_new_tokens=10
+                )
+                
+                # Log response details
+                print(f"   ✓ Response received: {type(response).__name__}")
+                if isinstance(response, str):
+                    print(f"   ✓ Response preview: {response[:50]}")
+                
+                self.inference_method = "text_generation"
+                print(f"   ✅ SUCCESS: Model supports text_generation API")
+                return True
+                
+            except Exception as e2:
+                # Print FULL exception message for text_generation (DO NOT TRUNCATE)
+                full_error_2 = str(e2)
+                print(f"   ✗ text_generation also failed")
+                print(f"   ✗ Full exception type: {type(e2).__name__}")
+                print(f"   ✗ Full error message: {full_error_2}")
+                
+                # Log HTTP status code if available
+                if hasattr(e2, 'response'):
+                    if hasattr(e2.response, 'status_code'):
+                        print(f"   ✗ HTTP Status Code: {e2.response.status_code}")
+                    if hasattr(e2.response, 'text'):
+                        print(f"   ✗ Response body: {e2.response.text[:200]}")
+                
+                # Explain exactly why text_generation failed
+                error_lower_2 = full_error_2.lower()
+                if "404" in full_error_2 or "not found" in error_lower_2:
+                    print(f"   ✗ REASON: Model '{model_id}' does not exist on Hugging Face")
+                elif "401" in full_error_2 or "unauthorized" in error_lower_2 or "authentication" in error_lower_2:
+                    print(f"   ✗ REASON: Authentication failed - invalid or missing token")
+                elif "403" in full_error_2 or "forbidden" in error_lower_2:
+                    print(f"   ✗ REASON: Access forbidden - model may be private or gated")
+                elif "503" in full_error_2 or "service unavailable" in error_lower_2:
+                    print(f"   ✗ REASON: Service temporarily unavailable - model may be loading")
+                elif "429" in full_error_2 or "rate limit" in error_lower_2:
+                    print(f"   ✗ REASON: Rate limit exceeded - too many requests")
+                elif "not supported" in error_lower_2 or "not available" in error_lower_2:
+                    print(f"   ✗ REASON: text_generation API not supported by this model")
+                elif "timeout" in error_lower_2:
+                    print(f"   ✗ REASON: Request timeout - model may be cold starting")
+                elif "stopiteration" in error_lower_2:
+                    print(f"   ✗ REASON: StopIteration error - model returned empty response")
+                else:
+                    print(f"   ✗ REASON: Unknown error - see full error message above")
+                
+                print(f"\n   ❌ FINAL VERDICT: Model '{model_id}' is NOT available via either API")
+                print(f"   ❌ Both chat_completion and text_generation failed")
                 return False
     
     def _generate_demo_response(self, prompt: str) -> str:
@@ -199,7 +273,7 @@ dynamic and unpredictable nature that makes football the world's most popular sp
         temperature: Optional[float] = None
     ) -> str:
         """
-        Generate text using IBM Granite model via Hugging Face or demo mode
+        Generate text using chat_completion API (avoids StopIteration errors)
         
         Args:
             prompt: Input prompt for generation
@@ -218,42 +292,34 @@ dynamic and unpredictable nature that makes football the world's most popular sp
             # Update parameters if provided
             params = self.default_params.copy()
             if max_tokens:
-                params["max_new_tokens"] = max_tokens
+                params["max_tokens"] = max_tokens
             if temperature:
                 params["temperature"] = temperature
             
-            print(f"🚀 Generating with IBM Granite model: {self.current_model}")
-            print(f"   Method: {self.inference_method}")
+            print(f"🚀 Generating with model: {self.current_model}")
+            print(f"   Method: chat_completion (avoids StopIteration)")
             print(f"   Prompt length: {len(prompt)} chars")
             
-            # Generate based on determined inference method
-            if self.inference_method == "chat_completion":
-                # Use chat completion API
-                messages = [
-                    {"role": "user", "content": prompt}
-                ]
-                response = self.client.chat_completion(
-                    messages=messages,
-                    model=self.current_model,
-                    max_tokens=params.get("max_new_tokens", 500),
-                    temperature=params.get("temperature", 0.7)
-                )
-                # Extract text from chat completion response
-                if hasattr(response, 'choices') and len(response.choices) > 0:
-                    result = response.choices[0].message.content or ""
-                else:
-                    result = str(response)
-                
-            else:
-                # Use text generation API (default)
-                response = self.client.text_generation(
-                    prompt,
-                    model=self.current_model,
-                    **params
-                )
-                result = str(response) if response is not None else ""
+            # Always use chat_completion to avoid StopIteration errors
+            messages = [
+                {"role": "user", "content": prompt}
+            ]
             
-            # Ensure result is a string before using len()
+            response = self.client.chat_completion(
+                messages=messages,
+                model=self.current_model,
+                max_tokens=params.get("max_tokens", 500),
+                temperature=params.get("temperature", 0.7),
+                top_p=params.get("top_p", 0.95)
+            )
+            
+            # Extract text from chat completion response
+            if hasattr(response, 'choices') and len(response.choices) > 0:
+                result = response.choices[0].message.content or ""
+            else:
+                result = str(response)
+            
+            # Ensure result is a string
             if result is None:
                 result = ""
             
@@ -262,8 +328,8 @@ dynamic and unpredictable nature that makes football the world's most popular sp
             
         except Exception as e:
             error_msg = str(e)
-            print(f"\n❌ Generation failed with IBM Granite model")
-            print(f"   Error: {error_msg}")
+            print(f"\n❌ Generation failed with model: {self.current_model}")
+            print(f"   Full error: {error_msg}")
             
             # Provide helpful error messages
             if "model" in error_msg.lower() and "not found" in error_msg.lower():
@@ -278,8 +344,9 @@ dynamic and unpredictable nature that makes football the world's most popular sp
             elif "timeout" in error_msg.lower():
                 print(f"   ⚠️  Request timeout")
                 print(f"   💡 The model may be loading, try again")
-            else:
-                print(f"   💡 Full error: {error_msg[:200]}")
+            elif "stopiteration" in error_msg.lower():
+                print(f"   ⚠️  StopIteration error (should not happen with chat_completion)")
+                print(f"   💡 This indicates an API issue")
             
             # Fall back to demo mode for this request
             print(f"   🎭 Using DEMO MODE for this request\n")
@@ -292,7 +359,7 @@ dynamic and unpredictable nature that makes football the world's most popular sp
         context: Optional[str] = None
     ) -> str:
         """
-        Generate response with system prompt and context
+        Generate response with system prompt and context using chat_completion
         
         Args:
             system_prompt: System instructions
@@ -302,18 +369,63 @@ dynamic and unpredictable nature that makes football the world's most popular sp
         Returns:
             Generated response
         """
-        # Build prompt with context (optimized for Granite instruct models)
-        prompt_parts = [f"System: {system_prompt}"]
+        # Use demo mode if client is not available
+        if self.demo_mode or self.client is None:
+            print(f"🎭 Using DEMO MODE for generation with context")
+            # Build a simple prompt for demo mode
+            prompt = f"{system_prompt}\n\n{context or ''}\n\n{user_message}"
+            return self._generate_demo_response(prompt)
         
-        if context:
-            prompt_parts.append(f"\nContext: {context}")
-        
-        prompt_parts.append(f"\nUser: {user_message}")
-        prompt_parts.append("\nAssistant:")
-        
-        full_prompt = "\n".join(prompt_parts)
-        
-        return self.generate(full_prompt)
+        try:
+            print(f"🚀 Generating with context using model: {self.current_model}")
+            
+            # Build messages for chat_completion with proper roles
+            messages = [
+                {"role": "system", "content": system_prompt}
+            ]
+            
+            # Add context as a user message if provided
+            if context:
+                messages.append({
+                    "role": "user", 
+                    "content": f"Context:\n{context}"
+                })
+            
+            # Add the actual user message
+            messages.append({
+                "role": "user",
+                "content": user_message
+            })
+            
+            response = self.client.chat_completion(
+                messages=messages,
+                model=self.current_model,
+                max_tokens=self.default_params.get("max_tokens", 500),
+                temperature=self.default_params.get("temperature", 0.7),
+                top_p=self.default_params.get("top_p", 0.95)
+            )
+            
+            # Extract text from chat completion response
+            if hasattr(response, 'choices') and len(response.choices) > 0:
+                result = response.choices[0].message.content or ""
+            else:
+                result = str(response)
+            
+            if result is None:
+                result = ""
+            
+            print(f"✅ Generation with context successful ({len(result)} chars)")
+            return result
+            
+        except Exception as e:
+            error_msg = str(e)
+            print(f"\n❌ Generation with context failed")
+            print(f"   Full error: {error_msg}")
+            print(f"   🎭 Using DEMO MODE for this request\n")
+            
+            # Fallback to demo mode
+            prompt = f"{system_prompt}\n\n{context or ''}\n\n{user_message}"
+            return self._generate_demo_response(prompt)
     
     def explain_decision(
         self,
@@ -333,14 +445,14 @@ dynamic and unpredictable nature that makes football the world's most popular sp
             Detailed explanation
         """
         system_prompt = f"""You are an expert football analyst providing clear, 
-        detailed explanations of {decision_type} decisions. Use the match context 
-        and event details to provide an educational explanation that helps fans 
-        understand the decision."""
+detailed explanations of {decision_type} decisions. Use the match context 
+and event details to provide an educational explanation that helps fans 
+understand the decision."""
         
         context = f"""Match: {match_context.get('teams', 'Unknown')}
-        Score: {match_context.get('score', 'Unknown')}
-        Time: {match_context.get('time', 'Unknown')}
-        Event: {specific_event.get('description', 'Unknown')}"""
+Score: {match_context.get('score', 'Unknown')}
+Time: {match_context.get('time', 'Unknown')}
+Event: {specific_event.get('description', 'Unknown')}"""
         
         user_message = f"Explain this {decision_type} decision in detail."
         

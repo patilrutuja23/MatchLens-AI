@@ -19,17 +19,33 @@ def render_momentum_page():
     
     explainer = st.session_state.momentum_explainer
     
-    # Load sample match data (in production, this would come from user selection)
-    match_data = _get_sample_match_data()
+    # Get match data from session state or use sample
+    match_data = _get_match_data()
+    
+    if match_data is None:
+        st.warning("⚠️ No match data loaded!")
+        st.info("Please upload a match file or start a live match first.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📤 Go to Upload Match", use_container_width=True):
+                st.session_state.page = "📤 Upload Match"
+                st.rerun()
+        with col2:
+            if st.button("⚡ Go to Live Match", use_container_width=True):
+                st.session_state.page = "⚡ Live Match"
+                st.rerun()
+        return
     
     # Display match info
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Match", f"{match_data['home_team']} vs {match_data['away_team']}")
+        st.metric("Match", f"{match_data.get('home_team', 'Unknown')} vs {match_data.get('away_team', 'Unknown')}")
     with col2:
-        st.metric("Final Score", match_data['final_score'])
+        score = match_data.get('score', match_data.get('final_score', 'N/A'))
+        st.metric("Final Score", score)
     with col3:
-        st.metric("Competition", match_data['competition'])
+        st.metric("Competition", match_data.get('competition', 'Unknown'))
     
     st.markdown("---")
     
@@ -48,13 +64,17 @@ def render_momentum_page():
     
     # Filter events for selected period
     time_period = f"{start_time}-{end_time} minutes"
-    events = [
-        event for event in match_data.get('events', [])
-        if start_time <= event.get('time', 0) < end_time
-    ]
+    events = match_data.get('events', [])
+    
+    # Filter events by time
+    filtered_events = []
+    for event in events:
+        event_time = _parse_event_time(event.get('time', 0))
+        if start_time <= event_time < end_time:
+            filtered_events.append(event)
     
     if st.button("🔍 Analyze Momentum", type="primary"):
-        if not events:
+        if not filtered_events:
             st.warning("No events found in this time period")
             return
         
@@ -63,7 +83,7 @@ def render_momentum_page():
             analysis = explainer.analyze_momentum_shift(
                 match_data,
                 time_period,
-                events
+                filtered_events
             )
             
             # Display results
@@ -124,27 +144,73 @@ def render_momentum_page():
                         for event in period_analysis['key_events'][:3]:
                             st.write(f"- {event['time']}': {event['type']}")
 
-def _get_sample_match_data():
-    """Get sample match data (placeholder)"""
-    return {
-        "home_team": "Manchester United",
-        "away_team": "Liverpool",
-        "final_score": "2-1",
-        "halftime_score": "1-0",
-        "competition": "Premier League",
-        "venue": "Old Trafford",
-        "date": "2026-06-08",
-        "duration": 90,
-        "events": [
-            {"time": 12, "type": "goal", "team": "home", "description": "Header from corner", "dangerous": True},
-            {"time": 23, "type": "shot", "team": "away", "description": "Shot saved", "dangerous": True},
-            {"time": 34, "type": "yellow_card", "team": "away", "description": "Tactical foul"},
-            {"time": 56, "type": "goal", "team": "away", "description": "Long range strike", "dangerous": True},
-            {"time": 67, "type": "substitution", "team": "home", "description": "Fresh legs"},
-            {"time": 78, "type": "goal", "team": "home", "description": "Counter attack", "dangerous": True},
-            {"time": 85, "type": "var", "team": "away", "description": "Penalty check - no penalty"},
-        ]
-    }
+def _get_match_data():
+    """Get match data from session state or sample data based on sidebar selection"""
+    import json
+    
+    # Check sidebar selection
+    selected_match = st.session_state.get('selected_match', 'Sample Match')
+    
+    # Debug output
+    with st.sidebar.expander("🔍 Debug Info", expanded=False):
+        st.write(f"**Selected:** {selected_match}")
+        st.write(f"**current_match exists:** {'current_match' in st.session_state}")
+        st.write(f"**match_loaded:** {st.session_state.get('match_loaded', False)}")
+        if 'current_match' in st.session_state:
+            match = st.session_state.current_match
+            st.write(f"**Teams:** {match.get('home_team', 'N/A')} vs {match.get('away_team', 'N/A')}")
+    
+    if selected_match == "Uploaded Match":
+        # Check for uploaded match
+        if 'current_match' in st.session_state and st.session_state.get('match_loaded'):
+            return st.session_state.current_match
+        
+        # Check for live match
+        if 'live_analyzer' in st.session_state:
+            analyzer = st.session_state.live_analyzer
+            if analyzer.match_started and analyzer.match_data:
+                return analyzer.export_match_data()
+        
+        # No uploaded match found - show helpful message
+        st.error("⚠️ 'Uploaded Match' selected but no match data found in session!")
+        st.info("💡 Go to Upload Match page and click '✅ Load Match for Analysis'")
+        return None
+    
+    else:  # Sample Match
+        # Load sample match data
+        try:
+            with open("data/matches/sample_match.json", "r") as f:
+                sample_data = json.load(f)
+                # Normalize field names
+                if 'score' in sample_data and 'final_score' not in sample_data:
+                    sample_data['final_score'] = sample_data['score']
+                return sample_data
+        except FileNotFoundError:
+            st.error("Sample match file not found")
+            return None
+
+def _parse_event_time(time_value):
+    """Parse event time to minutes"""
+    if isinstance(time_value, (int, float)):
+        return int(time_value)
+    
+    if isinstance(time_value, str):
+        # Handle formats like "45", "45+2", "45:30"
+        time_str = str(time_value).strip()
+        
+        if '+' in time_str:
+            base, added = time_str.split('+')
+            return int(base) + int(added)
+        elif ':' in time_str:
+            mins, secs = time_str.split(':')
+            return int(mins)
+        else:
+            try:
+                return int(time_str)
+            except:
+                return 0
+    
+    return 0
 
 def _create_momentum_chart(metrics):
     """Create momentum visualization chart"""

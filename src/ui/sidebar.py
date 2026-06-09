@@ -22,9 +22,9 @@ def render_sidebar() -> str:
         st.subheader("📊 Features")
         page = st.radio(
             "Select Feature",
-            ["Match Momentum", "VAR Decisions", "Match Story"],
+            ["📤 Upload Match", "⚡ Live Match", "Match Momentum", "VAR Decisions", "Match Story"],
             label_visibility="collapsed",
-            index=0  # Ensure a default selection
+            index=0  # Default to Upload Match
         )
         
         st.markdown("---")
@@ -32,12 +32,19 @@ def render_sidebar() -> str:
         # Settings section
         st.subheader("⚙️ Settings")
         
-        # Match selection
-        st.selectbox(
-            "Select Match",
-            ["Sample Match", "Upload Custom Match"],
-            key="selected_match"
-        )
+        # Match selection (only show if not on Upload or Live pages)
+        if page not in ["📤 Upload Match", "⚡ Live Match"]:
+            match_option = st.selectbox(
+                "Select Match",
+                ["Sample Match", "Uploaded Match"],
+                key="selected_match"
+            )
+            
+            # Show loaded match info if available
+            if "match_loaded" in st.session_state and st.session_state.match_loaded:
+                if "current_match" in st.session_state:
+                    match_data = st.session_state.current_match
+                    st.success(f"✅ Loaded: {match_data.get('home_team', 'Unknown')} vs {match_data.get('away_team', 'Unknown')}")
         
         # AI Settings
         with st.expander("AI Settings"):
@@ -60,21 +67,23 @@ def render_sidebar() -> str:
         # Info section
         st.subheader("ℹ️ About")
         st.info("""
-        **MatchLens AI** uses Hugging Face Granite AI to provide:
+        **MatchLens AI** uses Hugging Face AI to provide:
         
+        - 📤 Match file upload & validation
+        - ⚡ Live match tracking
         - 📈 Match momentum analysis
-        - 🎥 VAR decision explanations
+        - 🎥 VAR decision explanations (RAG-enhanced)
         - 📝 AI-generated match stories
         
-        Built with Hugging Face Granite Models
+        Built with Hugging Face Models
         """)
         
         # Footer
         st.markdown("---")
-        st.caption("Powered by Hugging Face Granite AI")
+        st.caption("Powered by Hugging Face AI")
         st.caption("© 2026 MatchLens AI")
     
     # Ensure we always return a string, defaulting to first option if None
-    return page if page is not None else "Match Momentum"
+    return page if page is not None else "📤 Upload Match"
 
 # Made with Bob

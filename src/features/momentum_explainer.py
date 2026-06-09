@@ -192,10 +192,30 @@ Total Events: {len(events)}"""
             time_period = f"{start_time}-{end_time} minutes"
             
             # Filter events for this period
-            events = [
-                event for event in match_data.get("events", [])
-                if start_time <= event.get("time", 0) < end_time
-            ]
+            events = []
+            for event in match_data.get("events", []):
+                event_time = event.get("time", 0)
+                # Convert time to int if it's a string
+                if isinstance(event_time, str):
+                    # Handle formats like "45", "45+2", "45:30"
+                    if '+' in event_time:
+                        base, added = event_time.split('+')
+                        event_time = int(base) + int(added)
+                    elif ':' in event_time:
+                        mins, secs = event_time.split(':')
+                        event_time = int(mins)
+                    else:
+                        try:
+                            event_time = int(event_time)
+                        except:
+                            event_time = 0
+                elif isinstance(event_time, (int, float)):
+                    event_time = int(event_time)
+                else:
+                    event_time = 0
+                
+                if start_time <= event_time < end_time:
+                    events.append(event)
             
             if events:
                 analysis = self.analyze_momentum_shift(

@@ -18,8 +18,23 @@ def render_var_page():
     
     explainer = st.session_state.var_explainer
     
-    # Load sample match data
-    match_data = _get_sample_match_data()
+    # Get match data from session state or use sample
+    match_data = _get_match_data()
+    
+    if match_data is None:
+        st.warning("⚠️ No match data loaded!")
+        st.info("Please upload a match file or start a live match first.")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("📤 Go to Upload Match", use_container_width=True):
+                st.session_state.page = "📤 Upload Match"
+                st.rerun()
+        with col2:
+            if st.button("⚡ Go to Live Match", use_container_width=True):
+                st.session_state.page = "⚡ Live Match"
+                st.rerun()
+        return
     
     # Display match info
     col1, col2, col3 = st.columns(3)
@@ -98,10 +113,33 @@ def render_var_page():
             st.subheader("🤖 AI Explanation")
             st.markdown(explanation['explanation'])
             
-            # Relevant Rules
+            # Relevant Rules (handle both old and new formats)
             st.subheader("📖 Relevant VAR Rules")
-            for i, rule in enumerate(explanation['relevant_rules'], 1):
-                st.info(f"**Rule {i}:** {rule}")
+            
+            # Check for new RAG format
+            if 'rules_used' in explanation:
+                for i, rule in enumerate(explanation['rules_used'], 1):
+                    st.info(f"**Rule {i}:** {rule}")
+                
+                # Show confidence score if available
+                if 'confidence_score' in explanation:
+                    st.metric("Confidence Score", f"{explanation['confidence_score']:.0%}")
+                
+                # Show retrieved evidence if available
+                if 'retrieved_evidence' in explanation:
+                    with st.expander("📚 Retrieved Evidence"):
+                        for evidence in explanation['retrieved_evidence']:
+                            st.write(f"**Source {evidence['rank']}:** {evidence['source']}")
+                            st.write(f"Relevance: {evidence['relevance']:.0%}")
+                            st.caption(evidence['text'][:200] + "...")
+                            st.divider()
+            
+            # Fallback to old format
+            elif 'relevant_rules' in explanation:
+                for i, rule in enumerate(explanation['relevant_rules'], 1):
+                    st.info(f"**Rule {i}:** {rule}")
+            else:
+                st.info("No specific rules retrieved for this decision")
             
             # Decision Factors
             st.subheader("⚖️ Decision Factors")
@@ -168,8 +206,38 @@ def render_var_page():
         The process typically takes 30-90 seconds.
         """)
 
+def _get_match_data():
+    """Get match data from session state or sample data based on sidebar selection"""
+    import json
+    
+    # Check sidebar selection
+    selected_match = st.session_state.get('selected_match', 'Sample Match')
+    
+    if selected_match == "Uploaded Match":
+        # Check for uploaded match
+        if 'current_match' in st.session_state and st.session_state.get('match_loaded'):
+            return st.session_state.current_match
+        
+        # Check for live match
+        if 'live_analyzer' in st.session_state:
+            analyzer = st.session_state.live_analyzer
+            if analyzer.match_started and analyzer.match_data:
+                return analyzer.export_match_data()
+        
+        # No uploaded match found
+        return None
+    
+    else:  # Sample Match
+        # Load sample match data
+        try:
+            with open("data/matches/sample_match.json", "r") as f:
+                return json.load(f)
+        except FileNotFoundError:
+            st.error("Sample match file not found")
+            return None
+
 def _get_sample_match_data():
-    """Get sample match data"""
+    """Get sample match data (fallback)"""
     return {
         "home_team": "Manchester City",
         "away_team": "Arsenal",
