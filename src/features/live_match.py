@@ -86,7 +86,7 @@ class LiveMatchAnalyzer:
         Returns:
             Result with event analysis
         """
-        if not self.match_started:
+        if not self.match_started or self.match_data is None:
             return {
                 "success": False,
                 "error": "Match not started. Call start_match() first."
@@ -198,6 +198,9 @@ Provide a brief tactical analysis of this goal and its impact on the match."""
         if not event.get("decision_type"):
             return {"type": "var_analysis", "analysis": "VAR review in progress"}
         
+        if self.match_data is None:
+            return {"type": "var_analysis", "analysis": "Match data not available"}
+        
         # Use VAR explainer for detailed analysis
         match_context = {
             "home_team": self.match_data["home_team"],
@@ -285,6 +288,12 @@ Provide a brief analysis of this penalty decision."""
             return {
                 "momentum": "neutral",
                 "analysis": "Not enough events to analyze momentum"
+            }
+        
+        if self.match_data is None:
+            return {
+                "momentum": "neutral",
+                "analysis": "Match data not available"
             }
         
         # Get recent events

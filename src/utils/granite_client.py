@@ -131,11 +131,14 @@ class GraniteClient:
             print(f"   ✗ Full error message: {full_error_1}")
             
             # Log HTTP status code if available
-            if hasattr(e1, 'response'):
-                if hasattr(e1.response, 'status_code'):
-                    print(f"   ✗ HTTP Status Code: {e1.response.status_code}")
-                if hasattr(e1.response, 'text'):
-                    print(f"   ✗ Response body: {e1.response.text[:200]}")
+            response = getattr(e1, 'response', None)
+            if response is not None:
+                status_code = getattr(response, 'status_code', None)
+                if status_code is not None:
+                    print(f"   ✗ HTTP Status Code: {status_code}")
+                response_text = getattr(response, 'text', None)
+                if response_text is not None:
+                    print(f"   ✗ Response body: {response_text[:200]}")
             
             # Explain exactly why chat_completion failed
             error_lower_1 = full_error_1.lower()
@@ -182,11 +185,14 @@ class GraniteClient:
                 print(f"   ✗ Full error message: {full_error_2}")
                 
                 # Log HTTP status code if available
-                if hasattr(e2, 'response'):
-                    if hasattr(e2.response, 'status_code'):
-                        print(f"   ✗ HTTP Status Code: {e2.response.status_code}")
-                    if hasattr(e2.response, 'text'):
-                        print(f"   ✗ Response body: {e2.response.text[:200]}")
+                response = getattr(e2, 'response', None)
+                if response is not None:
+                    status_code = getattr(response, 'status_code', None)
+                    if status_code is not None:
+                        print(f"   ✗ HTTP Status Code: {status_code}")
+                    response_text = getattr(response, 'text', None)
+                    if response_text is not None:
+                        print(f"   ✗ Response body: {response_text[:200]}")
                 
                 # Explain exactly why text_generation failed
                 error_lower_2 = full_error_2.lower()

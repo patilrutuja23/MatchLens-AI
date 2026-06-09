@@ -12,11 +12,13 @@ from sentence_transformers import SentenceTransformer
 import faiss
 
 try:
-    from docling.document_converter import DocumentConverter
+    from docling.document_converter import DocumentConverter  # type: ignore
     DOCLING_AVAILABLE = True
-except ImportError:
+except ImportError as e:
     DOCLING_AVAILABLE = False
-    print("⚠️  Docling not available. Install with: pip install docling")
+    print(f"⚠️  Docling not available: {e}")
+    print("   Install with: pip install docling")
+    DocumentConverter = None  # type: ignore
 
 
 class DocumentIngester:
@@ -59,7 +61,7 @@ class DocumentIngester:
         print(f"✅ Embedding dimension: {self.embedding_dim}")
         
         # Initialize Docling converter if available
-        if DOCLING_AVAILABLE:
+        if DOCLING_AVAILABLE and DocumentConverter is not None:
             self.converter = DocumentConverter()
             print(f"✅ Docling converter initialized")
         else:
@@ -103,7 +105,7 @@ class DocumentIngester:
             Extracted text
         """
         try:
-            import PyPDF2
+            import PyPDF2  # type: ignore
             with open(pdf_path, 'rb') as file:
                 reader = PyPDF2.PdfReader(file)
                 text = ""
@@ -178,9 +180,10 @@ class DocumentIngester:
         """
         texts = [chunk["text"] for chunk in chunks]
         print(f"🔢 Generating embeddings for {len(texts)} chunks...")
-        embeddings = self.embedding_model.encode(texts, show_progress_bar=True)
-        print(f"✅ Generated embeddings: {embeddings.shape}")
-        return embeddings
+        embeddings = self.embedding_model.encode(texts, show_progress_bar=True, convert_to_numpy=True)
+        embeddings_array = np.array(embeddings) if not isinstance(embeddings, np.ndarray) else embeddings
+        print(f"✅ Generated embeddings: {embeddings_array.shape}")
+        return embeddings_array
     
     def create_faiss_index(self, embeddings: np.ndarray) -> faiss.Index:
         """
@@ -194,7 +197,8 @@ class DocumentIngester:
         """
         print(f"🗂️  Creating FAISS index...")
         index = faiss.IndexFlatL2(self.embedding_dim)
-        index.add(embeddings.astype('float32'))
+        embeddings_float32 = embeddings.astype('float32')
+        index.add(embeddings_float32)  # type: ignore
         print(f"✅ FAISS index created with {index.ntotal} vectors")
         return index
     

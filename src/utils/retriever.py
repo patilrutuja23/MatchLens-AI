@@ -130,7 +130,8 @@ class DocumentRetriever:
                 continue
             
             # Search FAISS index
-            distances, indices = index.search(query_embedding, top_k)
+            # type: ignore - FAISS search method has incomplete type stubs
+            distances, indices = index.search(query_embedding, top_k)  # type: ignore[call-arg]
             
             # Collect results
             for i, (distance, idx) in enumerate(zip(distances[0], indices[0])):

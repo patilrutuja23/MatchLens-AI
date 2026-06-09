@@ -58,7 +58,7 @@ def render_story_page():
             ["dramatic", "analytical", "casual"],
             format_func=lambda x: x.title(),
             help="Choose the narrative style for your match story"
-        )
+        ) or "dramatic"  # Fallback to default if None
     
     with col2:
         length = st.selectbox(
@@ -67,7 +67,7 @@ def render_story_page():
             index=1,
             format_func=lambda x: x.title(),
             help="Choose how detailed you want the story to be"
-        )
+        ) or "medium"  # Fallback to default if None
     
     st.markdown("---")
     

@@ -34,7 +34,7 @@ class RAGChain:
     def retrieve_context(
         self,
         query: str,
-        doc_types: List[str] = None,
+        doc_types: Optional[List[str]] = None,
         top_k: int = 3
     ) -> Tuple[List[Dict], str]:
         """
@@ -79,7 +79,7 @@ class RAGChain:
         self,
         query: str,
         system_prompt: str,
-        doc_types: List[str] = None,
+        doc_types: Optional[List[str]] = None,
         top_k: int = 3,
         include_sources: bool = True
     ) -> Dict:

@@ -72,6 +72,11 @@ def render_var_page():
         format_func=lambda x: var_options[x]
     )
     
+    # Handle potential None return from selectbox
+    if selected_index is None:
+        st.error("Please select a VAR decision to analyze")
+        return
+    
     selected_var = var_events[selected_index]
     
     # Display decision details

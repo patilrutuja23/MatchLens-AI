@@ -90,6 +90,10 @@ class VARExplainer:
     ) -> Dict:
         """Explain VAR decision using RAG with FIFA rules retrieval"""
         
+        # Safety check: ensure rag_chain is available
+        if not self.rag_chain:
+            return self._explain_basic(decision_type, match_context, incident_details)
+        
         # Build detailed description for retrieval
         description = incident_details.get('description', '')
         time = incident_details.get('time', 'Unknown')
