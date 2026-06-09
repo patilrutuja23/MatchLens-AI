@@ -69,13 +69,21 @@ class StoryGenerator:
     
     def _parse_time(self, time_value) -> int:
         """Parse time value to integer, handling various formats"""
+        if time_value is None:
+            return 0
         try:
-            if isinstance(time_value, str):
-                # Extract base minute from formats like "45+3" or "90+2"
-                return int(time_value.split('+')[0])
-            else:
+            if isinstance(time_value, (int, float)):
                 return int(time_value)
-        except (ValueError, AttributeError, TypeError):
+            elif isinstance(time_value, str):
+                # Extract base minute from formats like "45+3" or "90+2"
+                time_str = str(time_value).strip()
+                if '+' in time_str:
+                    return int(time_str.split('+')[0])
+                else:
+                    return int(time_str)
+            else:
+                return 0
+        except (ValueError, AttributeError, TypeError) as e:
             return 0
     
     def _extract_key_moments(self, match_data: Dict) -> List[Dict]:
