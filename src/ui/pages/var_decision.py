@@ -41,7 +41,9 @@ def render_var_page():
     with col1:
         st.metric("Match", f"{match_data['home_team']} vs {match_data['away_team']}")
     with col2:
-        st.metric("Final Score", match_data['final_score'])
+        # Handle both 'score' and 'final_score' keys
+        score = match_data.get('final_score') or match_data.get('score', 'N/A')
+        st.metric("Final Score", score)
     with col3:
         var_stats = explainer.get_var_statistics(match_data)
         st.metric("VAR Reviews", var_stats['total_var_reviews'])
@@ -100,7 +102,7 @@ def render_var_page():
             # Prepare match context
             match_context = {
                 "teams": f"{match_data['home_team']} vs {match_data['away_team']}",
-                "score": match_data['final_score'],
+                "score": match_data.get('final_score') or match_data.get('score', 'N/A'),
                 "time": f"{selected_var['time']}'"
             }
             

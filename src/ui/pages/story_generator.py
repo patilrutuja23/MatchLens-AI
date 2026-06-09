@@ -41,7 +41,9 @@ def render_story_page():
     with col1:
         st.metric("Match", f"{match_data['home_team']} vs {match_data['away_team']}")
     with col2:
-        st.metric("Final Score", match_data['final_score'])
+        # Handle both 'score' and 'final_score' keys
+        score = match_data.get('final_score') or match_data.get('score', 'N/A')
+        st.metric("Final Score", score)
     with col3:
         st.metric("Competition", match_data['competition'])
     
