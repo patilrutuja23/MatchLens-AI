@@ -1,6 +1,7 @@
 """
 Match Story Generator
 Generates engaging match narratives using AI with dynamic content and turning point analysis
+Version: 2.0 - Fixed TypeError issues
 """
 
 from typing import Dict, List, Optional, Tuple
