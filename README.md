@@ -4,6 +4,12 @@
 
 MatchLens AI helps football fans understand matches better using IBM Granite AI to provide clear, educational explanations of complex match events, momentum shifts, and tactical decisions.
 
+## 🎥 Project Demo
+
+[![MatchLens AI Demo](https://img.youtube.com/vi/h_aB_8qd_5w/maxresdefault.jpg)](https://www.youtube.com/watch?v=h_aB_8qd_5w)
+
+▶️ Watch the full demo: https://www.youtube.com/watch?v=h_aB_8qd_5w
+
 ## 🎯 Project Overview
 
 MatchLens AI bridges the gap between casual fans and expert analysis by using explainable AI to break down:
