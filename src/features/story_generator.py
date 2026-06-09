@@ -102,17 +102,20 @@ Key Events:
         if time_value is None:
             return 0
         
-        if isinstance(time_value, (int, float)):
-            return int(time_value)
-        
-        if isinstance(time_value, str):
-            time_str = str(time_value).strip()
-            if '+' in time_str:
-                base_time = time_str.split('+')[0]
-                return int(base_time)
-            return int(time_str)
-        
-        return 0
+        try:
+            if isinstance(time_value, (int, float)):
+                return int(time_value)
+            
+            if isinstance(time_value, str):
+                time_str = str(time_value).strip()
+                if '+' in time_str:
+                    base_time = time_str.split('+')[0].strip()
+                    return int(base_time)
+                return int(time_str)
+            
+            return 0
+        except (ValueError, AttributeError, TypeError):
+            return 0
     
     def _extract_key_moments(self, match_data: Dict) -> List[Dict]:
         """Extract and enrich key moments from match data"""
