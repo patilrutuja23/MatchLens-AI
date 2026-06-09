@@ -13,15 +13,14 @@ numpy==1.26.4
 plotly==5.18.0
 
 requests>=2.32.2
-pydantic==2.6.0
+
+pydantic>=2.6.0,<3.0.0
 pydantic-settings>=2.3.0
 
-huggingface-hub>=0.23.0
+huggingface-hub>=0.23.0,<1.0.0
 
-# Document Processing - Removed docling due to conflicts
 PyPDF2>=3.0.0
 python-docx>=0.8.11
 
-# Additional dependencies for RAG
-torch>=2.0.0,<2.5.0
-transformers>=4.30.0,<5.0.0
+torch==2.4.1
+transformers==4.44.2
