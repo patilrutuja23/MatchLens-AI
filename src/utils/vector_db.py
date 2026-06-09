@@ -5,7 +5,7 @@ Handles embedding storage and retrieval for match context
 
 import os
 import pickle
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 import numpy as np
 from sentence_transformers import SentenceTransformer
 import faiss
@@ -19,9 +19,18 @@ class VectorDatabase:
         self.config = load_config()
         ensure_directories()
         
-        # Initialize embedding model
-        self.embedding_model = SentenceTransformer(self.config.embedding_model)
-        self.embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
+        # Initialize embedding model with fallback
+        try:
+            self.embedding_model = SentenceTransformer(
+                self.config.embedding_model,
+                device="cpu"
+            )
+            self.embedding_dim = self.embedding_model.get_sentence_embedding_dimension()
+        except Exception as e:
+            print(f"Embedding model initialization failed: {e}")
+            print("Running in fallback mode without SentenceTransformer")
+            self.embedding_model = None
+            self.embedding_dim = 384
         
         # Initialize FAISS index
         self.index = faiss.IndexFlatL2(self.embedding_dim)
@@ -69,9 +78,9 @@ class VectorDatabase:
             print(f"Error saving index: {e}")
     
     def add_documents(
-        self, 
-        documents: List[str], 
-        metadata: List[Dict] = None
+        self,
+        documents: List[str],
+        metadata: Optional[List[Dict]] = None
     ):
         """
         Add documents to the vector database
@@ -83,12 +92,17 @@ class VectorDatabase:
         if not documents:
             return
         
+        # Check if embedding model is available
+        if self.embedding_model is None:
+            return
+        
         # Generate embeddings
         embeddings = self.embedding_model.encode(documents)
         embeddings = np.array(embeddings).astype('float32')
         
         # Add to FAISS index
-        self.index.add(embeddings)
+        # type: ignore - FAISS add method has incomplete type stubs
+        self.index.add(embeddings)  # type: ignore[call-arg]
         
         # Store documents and metadata
         self.documents.extend(documents)
@@ -101,8 +115,8 @@ class VectorDatabase:
         self._save_index()
     
     def search(
-        self, 
-        query: str, 
+        self,
+        query: str,
         k: int = 5
     ) -> List[Tuple[str, Dict, float]]:
         """
@@ -118,12 +132,17 @@ class VectorDatabase:
         if self.index.ntotal == 0:
             return []
         
+        # Check if embedding model is available
+        if self.embedding_model is None:
+            return []
+        
         # Generate query embedding
         query_embedding = self.embedding_model.encode([query])
         query_embedding = np.array(query_embedding).astype('float32')
         
         # Search
-        distances, indices = self.index.search(query_embedding, min(k, self.index.ntotal))
+        # type: ignore - FAISS search returns (distances, indices) tuple
+        distances, indices = self.index.search(query_embedding, min(k, self.index.ntotal))  # type: ignore[call-arg]
         
         # Prepare results
         results = []
